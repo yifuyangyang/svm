@@ -1,12 +1,8 @@
 import os
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 from sklearn.svm import SVC
 from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
-import time
-import joblib
+from sklearn.metrics import accuracy_score, classification_report
 
 # ========== 1. 32x32 文本图片 -> 1x1024 向量 ==========
 def img2vector(file_path):
@@ -47,8 +43,8 @@ def load_dataset(dir_path):
     return data_mat, np.array(label_list, dtype=np.int32)
 
 # ========== 3. 指定你的训练集 / 测试集目录 ==========
-train_dir = r"C:\Users\Administrator\Desktop\lesson3\digits\trainingDigits"   # 改成你的 402 个训练文件所在文件夹
-test_dir  = r"C:\Users\Administrator\Desktop\lesson3\digits\testDigits"       # 改成你的 186 个测试文件所在文件夹
+train_dir = r"C:\Users\E507\Documents\GitHub\svm\dataset\trainingDigits"   # 改成你的 402 个训练文件所在文件夹
+test_dir  = r"C:\Users\E507\Documents\GitHub\svm\dataset\testDigits"       # 改成你的 186 个测试文件所在文件夹
 
 X_train, y_train = load_dataset(train_dir)
 X_test,  y_test  = load_dataset(test_dir)
@@ -57,147 +53,50 @@ print("训练集形状：", X_train.shape, " 标签形状：", y_train.shape)
 print("测试集形状：", X_test.shape,  " 标签形状：", y_test.shape)
 
 # ========== 4. 配置 SVM + GridSearchCV ==========
-print("开始进行参数搜索...")
+print("\n开始网格搜索...")
 
-# 创建SVC模型
+# 1. 创建SVC模型
 svc = SVC(kernel="rbf", random_state=42)
 
-# 设置参数网格
+# 2. 构造参数网格
 param_grid = {
     'C': [0.1, 1, 10, 100],
-    'gamma': [0.001, 0.01, 0.1, 1],
-    'kernel': ['rbf', 'linear']  # 同时搜索不同核函数
+    'gamma': [0.001, 0.01, 0.1]
 }
 
-# 创建GridSearchCV对象
+# 3. 使用GridSearchCV
 grid_search = GridSearchCV(
     estimator=svc,
     param_grid=param_grid,
     scoring="accuracy",
     cv=5,          # 5折交叉验证
-    n_jobs=-1,     # 使用所有可用的CPU核心
-    verbose=2      # 输出详细日志
+    n_jobs=-1,     # 使用所有CPU核心加速
+    verbose=1      # 输出详细日志
 )
 
-# 在训练集上进行参数搜索
-print("正在进行网格搜索，这可能需要一些时间...")
-start_time = time.time()
+# 4. 在训练集上进行搜索
 grid_search.fit(X_train, y_train)
-end_time = time.time()
 
-print(f"参数搜索完成，耗时: {end_time - start_time:.2f} 秒")
+# 5. 打印最佳结果
+print("\n=== 网格搜索完成 ===")
 print("最优参数：", grid_search.best_params_)
 print("交叉验证下的最佳平均准确率：", grid_search.best_score_)
 
-# 显示所有参数组合的结果
-print("\n所有参数组合的交叉验证结果：")
-results = grid_search.cv_results_
-for mean_score, params in zip(results['mean_test_score'], results['params']):
-    print(f"参数: {params} -> 准确率: {mean_score:.4f}")
-
 # ========== 5. 使用最优模型在测试集上评估 ==========
-print("\n" + "="*50)
-print("在测试集上评估最优模型...")
+print("\n=== 在测试集上评估 ===")
 
-# 获取最优模型
+# 1. 从grid_search中取出最优模型
 best_clf = grid_search.best_estimator_
 
-# 在测试集上进行预测
+# 2. 使用best_clf对测试集进行预测
 y_pred = best_clf.predict(X_test)
 
-# 计算测试集准确率
+# 3. 计算测试集上的准确率
 test_acc = accuracy_score(y_test, y_pred)
 
-print(f"测试集准确率：{test_acc:.4f}")
+# 4. 打印结果
+print("测试集准确率：", test_acc)
 
-# 检查是否达到98%的目标
-if test_acc >= 0.98:
-    print("🎉 恭喜！已达到98%以上的准确率目标！")
-else:
-    print("⚠️  未达到98%的准确率目标，尝试增强参数搜索...")
-    
-    # 增强版参数搜索
-    def enhanced_parameter_search():
-        print("使用增强版参数搜索...")
-        
-        # 更精细的参数网格
-        enhanced_param_grid = {
-            'C': [1, 10, 50, 100, 200],
-            'gamma': [0.0001, 0.001, 0.005, 0.01, 0.05],
-            'kernel': ['rbf']
-        }
-        
-        enhanced_svc = SVC(random_state=42)
-        
-        enhanced_grid_search = GridSearchCV(
-            estimator=enhanced_svc,
-            param_grid=enhanced_param_grid,
-            scoring="accuracy",
-            cv=5,
-            n_jobs=-1,
-            verbose=2
-        )
-        
-        enhanced_grid_search.fit(X_train, y_train)
-        
-        print("增强搜索最优参数：", enhanced_grid_search.best_params_)
-        print("增强搜索最佳交叉验证准确率：", enhanced_grid_search.best_score_)
-        
-        return enhanced_grid_search
-
-    # 运行增强搜索
-    enhanced_grid_search = enhanced_parameter_search()
-    best_clf = enhanced_grid_search.best_estimator_
-    y_pred = best_clf.predict(X_test)
-    test_acc = accuracy_score(y_test, y_pred)
-    print(f"增强搜索后的测试集准确率：{test_acc:.4f}")
-    
-    # 再次检查是否达到目标
-    if test_acc >= 0.98:
-        print("🎉 恭喜！增强搜索后已达到98%以上的准确率目标！")
-    else:
-        print("⚠️  仍然未达到98%的准确率目标")
-
-# 打印详细的分类报告
-print("\n详细分类报告：")
+# 5. 打印更详细的分类报告
+print("\n=== 详细分类报告 ===")
 print(classification_report(y_test, y_pred))
-
-# 显示混淆矩阵
-cm = confusion_matrix(y_test, y_pred)
-print("混淆矩阵：")
-print(cm)
-
-# 可视化混淆矩阵
-plt.figure(figsize=(10, 8))
-sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
-            xticklabels=range(10), yticklabels=range(10))
-plt.title('Confusion Matrix - SVM Handwritten Digit Recognition')
-plt.ylabel('True Label')
-plt.xlabel('Predicted Label')
-plt.tight_layout()
-plt.savefig('confusion_matrix.png', dpi=300, bbox_inches='tight')
-plt.show()
-
-# 保存模型
-model_filename = 'best_svm_digit_classifier.pkl'
-joblib.dump(best_clf, model_filename)
-print(f"最优模型已保存为 '{model_filename}'")
-
-# 显示每个数字的分类准确率
-print("\n各数字分类准确率：")
-for digit in range(10):
-    digit_indices = y_test == digit
-    if np.sum(digit_indices) > 0:
-        digit_accuracy = accuracy_score(y_test[digit_indices], y_pred[digit_indices])
-        print(f"数字 {digit}: {digit_accuracy:.4f} ({np.sum(digit_indices)} 个样本)")
-
-# 最终总结
-print("\n" + "="*60)
-print("项目总结：")
-print(f"训练集样本数: {X_train.shape[0]}")
-print(f"测试集样本数: {X_test.shape[0]}")
-print(f"最优参数: {grid_search.best_params_}")
-print(f"交叉验证最佳准确率: {grid_search.best_score_:.4f}")
-print(f"测试集最终准确率: {test_acc:.4f}")
-print(f"目标达成: {'是' if test_acc >= 0.98 else '否'}")
-print("="*60)
