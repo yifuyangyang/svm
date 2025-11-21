@@ -43,8 +43,8 @@ def load_dataset(dir_path):
     return data_mat, np.array(label_list, dtype=np.int32)
 
 # ========== 3. 指定你的训练集 / 测试集目录 ==========
-train_dir = r"C:\Users\E507\Documents\GitHub\svm\dataset\trainingDigits"   # 改成你的 402 个训练文件所在文件夹
-test_dir  = r"C:\Users\E507\Documents\GitHub\svm\dataset\testDigits"       # 改成你的 186 个测试文件所在文件夹
+train_dir = r"D:\学习\机器学习\svm\dataset\trainingDigits"   # 改成你的 402 个训练文件所在文件夹
+test_dir  = r"D:\学习\机器学习\svm\dataset\testDigits"       # 改成你的 186 个测试文件所在文件夹
 
 X_train, y_train = load_dataset(train_dir)
 X_test,  y_test  = load_dataset(test_dir)
