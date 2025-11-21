@@ -43,8 +43,8 @@ def load_dataset(dir_path):
     return data_mat, np.array(label_list, dtype=np.int32)
 
 # ========== 3. 指定你的训练集 / 测试集目录 ==========
-train_dir = r"C:\Users\Administrator\Desktop\lesson3\digits\trainingDigits"   # 改成你的 402 个训练文件所在文件夹
-test_dir  = r"C:\Users\Administrator\Desktop\lesson3\digits\testDigits"       # 改成你的 186 个测试文件所在文件夹
+train_dir = r"C:\dataset\trainingDigits"   # 改成你的 402 个训练文件所在文件夹
+test_dir  = r"C:\dataset\testDigits"       # 改成你的 186 个测试文件所在文件夹
 
 X_train, y_train = load_dataset(train_dir)
 X_test,  y_test  = load_dataset(test_dir)
@@ -57,59 +57,55 @@ print("测试集形状：", X_test.shape,  " 标签形状：", y_test.shape)
 """
 【任务 1】：
     使用 SVC + GridSearchCV 在训练集上搜索最优参数（例如 C 和 gamma）。
-
-    提示：
-    1. 先创建一个 SVC 模型，比如：
-           svc = SVC(kernel="rbf")
-    2. 再构造一个参数网格 param_grid（字典），例如：
-           C  可以在 [0.1, 1, 10, 100] 中选
-           gamma 可以在 [0.001, 0.01, 0.1] 中选
-    3. 使用 GridSearchCV：
-           grid_search = GridSearchCV(
-               estimator=svc,
-               param_grid=param_grid,
-               scoring="accuracy",
-               cv=5,          # 5 折交叉验证
-               n_jobs=-1,     # 可选，加速
-               verbose=1      # 可选，输出日志
-           )
-    4. 调用 grid_search.fit(X_train, y_train) 在训练集上进行搜索。
-    5. 训练完成后，可以打印：
-           grid_search.best_params_
-           grid_search.best_score_
 """
 
-# 在这里写你自己的 GridSearchCV 代码
-# 示例结构（请自行补充具体实现）：
-# grid_search = GridSearchCV(......)
-# grid_search.fit(X_train, y_train)
-# print("最优参数：", grid_search.best_params_)
-# print("交叉验证下的最佳平均准确率：", grid_search.best_score_)
+# 创建SVC模型
+svc = SVC(kernel="rbf")
+
+# 构造参数网格
+param_grid = {
+    'C': [0.1, 1, 10, 100],
+    'gamma': [0.001, 0.01, 0.1]
+}
+
+# 创建GridSearchCV对象
+grid_search = GridSearchCV(
+    estimator=svc,
+    param_grid=param_grid,
+    scoring="accuracy",
+    cv=5,          # 5折交叉验证
+    n_jobs=1,      # 改为1，避免多进程导致的编码问题
+    verbose=1      # 输出详细日志
+)
+
+# 在训练集上进行网格搜索
+print("开始网格搜索...")
+grid_search.fit(X_train, y_train)
+
+# 输出最优参数和得分
+print("最优参数：", grid_search.best_params_)
+print("交叉验证下的最佳平均准确率：", grid_search.best_score_)
 
 
-# ========== 5. 使用最优模型在测试集上评估（学生完成） ==========
+# ========== 5. 使用最优模型在测试集上评估 ==========
 
 """
 【任务 2】：
     使用从 GridSearchCV 中得到的最优模型，在测试集上评估性能。
-
-    提示：
-    1. 从 grid_search 中取出最优模型：
-           best_clf = grid_search.best_estimator_
-    2. 使用 best_clf 对测试集进行预测：
-           y_pred = best_clf.predict(X_test)
-    3. 计算测试集上的准确率：
-           test_acc = accuracy_score(y_test, y_pred)
-    4. 打印结果：
-           print("测试集准确率：", test_acc)
-    5. （选做）打印更详细的分类报告：
-           print(classification_report(y_test, y_pred))
 """
 
-# 在这里写你自己的测试集评估代码
-# 例如：
-# best_clf = ...
-# y_pred = ...
-# test_acc = ...
-# print("测试集准确率：", test_acc)
-# print(classification_report(y_test, y_pred))
+# 从 grid_search 中取出最优模型
+best_clf = grid_search.best_estimator_
+
+# 使用 best_clf 对测试集进行预测
+y_pred = best_clf.predict(X_test)
+
+# 计算测试集上的准确率
+test_acc = accuracy_score(y_test, y_pred)
+
+# 打印结果
+print("测试集准确率：", test_acc)
+
+# 打印更详细的分类报告
+print("\n详细分类报告：")
+print(classification_report(y_test, y_pred))
