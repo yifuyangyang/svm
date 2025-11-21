@@ -43,8 +43,8 @@ def load_dataset(dir_path):
     return data_mat, np.array(label_list, dtype=np.int32)
 
 # ========== 3. 指定你的训练集 / 测试集目录 ==========
-train_dir = r"C:\Users\Administrator\Desktop\lesson3\digits\trainingDigits"   # 改成你的 402 个训练文件所在文件夹
-test_dir  = r"C:\Users\Administrator\Desktop\lesson3\digits\testDigits"       # 改成你的 186 个测试文件所在文件夹
+train_dir = r"C:\Users\E507\Desktop\svm\dataset\trainingDigits"   # 改成你的 402 个训练文件所在文件夹
+test_dir  = r"C:\Users\E507\Desktop\svm\dataset\testDigits"       # 改成你的 186 个测试文件所在文件夹
 
 X_train, y_train = load_dataset(train_dir)
 X_test,  y_test  = load_dataset(test_dir)
@@ -86,6 +86,27 @@ print("测试集形状：", X_test.shape,  " 标签形状：", y_test.shape)
 # print("最优参数：", grid_search.best_params_)
 # print("交叉验证下的最佳平均准确率：", grid_search.best_score_)
 
+# 补充任务1：GridSearchCV参数搜索实现
+svc = SVC(kernel="rbf")  # 初始化RBF核SVM
+param_grid = {
+    'C': [0.1, 1, 10, 100],    # 正则化强度（按提示范围设置）
+    'gamma': [0.001, 0.01, 0.1]# 核函数带宽（按提示范围设置）
+}
+# 配置网格搜索
+grid_search = GridSearchCV(
+    estimator=svc,
+    param_grid=param_grid,
+    scoring="accuracy",
+    cv=5,          # 5折交叉验证
+    n_jobs=-1,     # 利用所有CPU核心加速
+    verbose=1      # 输出训练日志
+)
+# 在训练集上拟合搜索最优参数
+grid_search.fit(X_train, y_train)
+# 打印最优参数和交叉验证最优准确率
+print("最优参数：", grid_search.best_params_)
+print("交叉验证下的最佳平均准确率：", grid_search.best_score_)
+
 
 # ========== 5. 使用最优模型在测试集上评估（学生完成） ==========
 
@@ -113,3 +134,12 @@ print("测试集形状：", X_test.shape,  " 标签形状：", y_test.shape)
 # test_acc = ...
 # print("测试集准确率：", test_acc)
 # print(classification_report(y_test, y_pred))
+
+# 补充任务2：测试集评估实现
+best_clf = grid_search.best_estimator_  # 获取最优模型
+y_pred = best_clf.predict(X_test)       # 测试集预测
+test_acc = accuracy_score(y_test, y_pred)  # 计算准确率
+# 打印结果
+print("测试集准确率：", test_acc)
+print("\n详细分类报告：")
+print(classification_report(y_test, y_pred))  # 打印精确率/召回率/F1分数
