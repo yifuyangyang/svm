@@ -4,11 +4,12 @@ from sklearn.svm import SVC
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import accuracy_score, classification_report
 
+
 # ========== 1. 32x32 文本图片 -> 1x1024 向量 ==========
 def img2vector(file_path):
-    """
-    将一个 32x32 的 0/1 文本图片转成 1x1024 的 numpy 向量
-    """
+#     """
+#     将一个 32x32 的 0/1 文本图片转成 1x1024 的 numpy 向量
+#     """
     vec = np.zeros((1, 1024), dtype=np.float32)
     with open(file_path, 'r') as f:
         for i in range(32):
@@ -21,11 +22,11 @@ def img2vector(file_path):
 
 # ========== 2. 读取整个数据集 ==========
 def load_dataset(dir_path):
-    """
-    遍历 dir_path 下所有 txt 文件
-    文件名格式假定为：  digit_index.txt  例如：1_0.txt, 9_12.txt
-    标签 = 文件名中 '_' 前面的数字
-    """
+#     """
+#     遍历 dir_path 下所有 txt 文件
+#     文件名格式假定为：  digit_index.txt  例如：1_0.txt, 9_12.txt
+#     标签 = 文件名中 '_' 前面的数字
+#     """
     file_list = [f for f in os.listdir(dir_path) if f.endswith('.txt')]
     num_files = len(file_list)
 
@@ -43,8 +44,8 @@ def load_dataset(dir_path):
     return data_mat, np.array(label_list, dtype=np.int32)
 
 # ========== 3. 指定你的训练集 / 测试集目录 ==========
-train_dir = r"C:\Users\Administrator\Desktop\lesson3\digits\trainingDigits"   # 改成你的 402 个训练文件所在文件夹
-test_dir  = r"C:\Users\Administrator\Desktop\lesson3\digits\testDigits"       # 改成你的 186 个测试文件所在文件夹
+train_dir = r"C:\Users\E507\Documents\GitHub\svm1\dataset\trainingDigits"   # 改成你的 402 个训练文件所在文件夹
+test_dir  = r"C:\Users\E507\Documents\GitHub\svm1\dataset\testDigits"       # 改成你的 186 个测试文件所在文件夹
 
 X_train, y_train = load_dataset(train_dir)
 X_test,  y_test  = load_dataset(test_dir)
@@ -79,31 +80,48 @@ print("测试集形状：", X_test.shape,  " 标签形状：", y_test.shape)
            grid_search.best_score_
 """
 
-# 在这里写你自己的 GridSearchCV 代码
-# 示例结构（请自行补充具体实现）：
+# # 在这里写你自己的 GridSearchCV 代码
+# # 示例结构（请自行补充具体实现）：
 # grid_search = GridSearchCV(......)
 # grid_search.fit(X_train, y_train)
 # print("最优参数：", grid_search.best_params_)
 # print("交叉验证下的最佳平均准确率：", grid_search.best_score_)
+svc =SVC (kernel="rbf", random_state=42)
+
+param_grid={
+            'C':[0.1, 1, 10, 100],
+            'gamma':[0.001, 0.01, 0.1]
+       }
+grid_search = GridSearchCV(
+              estimator=svc,
+              param_grid=param_grid,
+              scoring="accuracy",
+              cv=5,         
+              n_jobs=-1,    
+              verbose=1      
+           )
+grid_search.fit(X_train, y_train)
+print("最优参数：", grid_search.best_params_)
+print("交叉验证下的最佳平均准确率：", grid_search.best_score_)
 
 
 # ========== 5. 使用最优模型在测试集上评估（学生完成） ==========
 
 """
-【任务 2】：
-    使用从 GridSearchCV 中得到的最优模型，在测试集上评估性能。
+       【任务 2】：
+       使用从 GridSearchCV 中得到的最优模型，在测试集上评估性能。
 
-    提示：
-    1. 从 grid_search 中取出最优模型：
-           best_clf = grid_search.best_estimator_
-    2. 使用 best_clf 对测试集进行预测：
-           y_pred = best_clf.predict(X_test)
-    3. 计算测试集上的准确率：
-           test_acc = accuracy_score(y_test, y_pred)
-    4. 打印结果：
-           print("测试集准确率：", test_acc)
-    5. （选做）打印更详细的分类报告：
-           print(classification_report(y_test, y_pred))
+       提示：
+       1. 从 grid_search 中取出最优模型：
+              best_clf = grid_search.best_estimator_
+       2. 使用 best_clf 对测试集进行预测：
+              y_pred = best_clf.predict(X_test)
+       3. 计算测试集上的准确率：
+              test_acc = accuracy_score(y_test, y_pred)
+       4. 打印结果：
+              print("测试集准确率：", test_acc)
+       5. （选做）打印更详细的分类报告：
+              print(classification_report(y_test, y_pred))
 """
 
 # 在这里写你自己的测试集评估代码
@@ -113,3 +131,10 @@ print("测试集形状：", X_test.shape,  " 标签形状：", y_test.shape)
 # test_acc = ...
 # print("测试集准确率：", test_acc)
 # print(classification_report(y_test, y_pred))
+best_clf = grid_search.best_estimator_
+y_pred = best_clf.predict(X_test)
+test_acc = accuracy_score(y_test, y_pred)
+
+print("测试集准确率：", test_acc)
+print("\n分类报告")
+print(classification_report(y_test, y_pred))
