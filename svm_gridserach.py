@@ -43,8 +43,8 @@ def load_dataset(dir_path):
     return data_mat, np.array(label_list, dtype=np.int32)
 
 # ========== 3. 指定你的训练集 / 测试集目录 ==========
-train_dir = r"C:\Users\Administrator\Desktop\lesson3\digits\trainingDigits"   # 改成你的 402 个训练文件所在文件夹
-test_dir  = r"C:\Users\Administrator\Desktop\lesson3\digits\testDigits"       # 改成你的 186 个测试文件所在文件夹
+train_dir = r"C:\Users\E507\Desktop\svm\svm\dataset\trainingDigits"   # 改成你的 402 个训练文件所在文件夹
+test_dir  = r"C:\Users\E507\Desktop\svm\svm\dataset\testDigits"       # 改成你的 186 个测试文件所在文件夹
 
 X_train, y_train = load_dataset(train_dir)
 X_test,  y_test  = load_dataset(test_dir)
@@ -85,7 +85,28 @@ print("测试集形状：", X_test.shape,  " 标签形状：", y_test.shape)
 # grid_search.fit(X_train, y_train)
 # print("最优参数：", grid_search.best_params_)
 # print("交叉验证下的最佳平均准确率：", grid_search.best_score_)
+# ========== 4. 配置 SVM + GridSearchCV ==========
+# 这里以 RBF 核为主（手写识别常用），搜索 C 和 gamma
+svc = SVC(kernel="rbf")
 
+param_grid = {
+    "C": [0.1, 1, 10, 100],    # 惩罚参数 C，控制模型复杂度
+    "gamma": [0.001, 0.01, 0.1]  # RBF 核的带宽参数，控制高斯核的影响力范围
+}
+
+grid_search = GridSearchCV(
+    estimator=svc,               # 待优化的基础模型
+    param_grid=param_grid,       # 待搜索的参数网格
+    scoring="accuracy",          # 评价指标（手写识别任务用准确率）
+    cv=5,                        # 5 折交叉验证（将训练集分成 5 份，轮流作为验证集）
+    n_jobs=-1,                   # 利用所有 CPU 核心加速计算（可选，建议开启）
+    verbose=1                    # 输出搜索过程日志（1 表示中等详细程度，可选）
+)
+
+grid_search.fit(X_train, y_train)
+
+print("最优参数组合：", grid_search.best_params_)
+print("交叉验证下的最佳平均准确率：", grid_search.best_score_)
 
 # ========== 5. 使用最优模型在测试集上评估（学生完成） ==========
 
@@ -113,3 +134,22 @@ print("测试集形状：", X_test.shape,  " 标签形状：", y_test.shape)
 # test_acc = ...
 # print("测试集准确率：", test_acc)
 # print(classification_report(y_test, y_pred))
+# 最后的测试模型的准确率需要大于98%
+# ========== 5. 最优模型在测试集上的性能评估 ==========
+# 【任务 2】：使用 GridSearchCV 得到的最优模型评估测试集性能
+
+best_clf = grid_search.best_estimator_
+
+y_pred = best_clf.predict(X_test)
+
+test_acc = accuracy_score(y_test, y_pred)
+
+print("测试集准确率：", test_acc)
+
+print("\n详细分类报告：")
+print(classification_report(y_test, y_pred))
+
+if test_acc > 0.98:
+    print(f"\n测试集准确率 {test_acc:.4f} 满足要求（> 98%）")
+else:
+    print(f"\n测试集准确率 {test_acc:.4f} 未满足要求（需要 > 98%），请调整参数网格或优化模型")
